@@ -1,0 +1,16 @@
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.suo
+*.ntvs_analysis.dat
+*.vscode
+*.dbmdl
+
