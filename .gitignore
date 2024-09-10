@@ -13,4 +13,5 @@ obj/
 *.ntvs_analysis.dat
 *.vscode
 *.dbmdl
+*.db
 
