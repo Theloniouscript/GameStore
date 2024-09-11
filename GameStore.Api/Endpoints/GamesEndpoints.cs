@@ -73,10 +73,10 @@ public static class GamesEndpoints {
 
         // PUT /games
 
-        app.MapPut("games/{id}", (int id, UpdateGameDto updatedGame) => {
-            var index = games.FindIndex(game => game.Id == id);
+        app.MapPut("games/{id}", (int id, UpdateGameDto updatedGame, GameStoreContext dbContext) => {
+            var existingGame = dbContext.Games.Find(id);
 
-            if(index == -1) {
+            if(existingGame is null) {
                 return Results.NotFound();
             }
 
@@ -85,24 +85,17 @@ public static class GamesEndpoints {
                 return Results.BadRequest("Name is required and should be < or = 50 characters");
             }
 
-            if(string.IsNullOrEmpty(updatedGame.Genre) || updatedGame.Genre.Length > 20)
-            {
-                return Results.BadRequest("Genre is required and should be < or = 20 characters");
-            }
-
             if(updatedGame.Price < 1 || updatedGame.Price > 100)
             {
                 return Results.BadRequest("Price must be between 1 and 100");
             }
 
-            games[index] = new GameSummaryDto(
-                id,
-                updatedGame.Name,
-                updatedGame.Genre,
-                updatedGame.Price,
-                updatedGame.ReleaseDate);
+            dbContext.Entry(existingGame)
+                    .CurrentValues
+                    .SetValues(updatedGame.ToEntity(id));
+            dbContext.SaveChanges();
 
-                return Results.NoContent();
+            return Results.NoContent();
         });
 
         // DELETE /games
