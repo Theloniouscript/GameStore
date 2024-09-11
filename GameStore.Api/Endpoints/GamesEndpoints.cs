@@ -8,23 +8,23 @@ namespace GameStore.Api.Endpoints;
 public static class GamesEndpoints {
     const string GetGameEndPointName = "GetGame";
 
-    private static readonly List<GameDto> games = new List<GameDto>
+    private static readonly List<GameSummaryDto> games = new List<GameSummaryDto>
     {
-        new GameDto (
+        new GameSummaryDto (
             1,
             "Street Fighter II",
             "Fighting",
             19.99M,
             new DateTime(1992, 7, 15, 0, 0, 0, DateTimeKind.Utc)),
 
-        new GameDto (
+        new GameSummaryDto (
             2, 
             "Final Fantasy XIV",
             "Roleplaying",
             59.99M,
             new DateTime(2010, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
 
-        new GameDto (
+        new GameSummaryDto (
             3,
             "FIFA 23",
             "Sports",
@@ -38,9 +38,10 @@ public static class GamesEndpoints {
 
         // GET /games/1
 
-        app.MapGet("games/{id}", (int id) => {
-            GameDto? game = games.Find(game => game.Id == id);    
-            return game is null ? Results.NotFound() : Results.Ok(game);
+        app.MapGet("games/{id}", (int id, GameStoreContext dbContext) => {
+            Game? game = dbContext.Games.Find(id);    
+            return game is null ? 
+                Results.NotFound() : Results.Ok(game.ToGameDetailsDto());
             })
             .WithName(GetGameEndPointName);
 
@@ -59,15 +60,14 @@ public static class GamesEndpoints {
             }
 
             Game game = newGame.ToEntity();
-            game.Genre = dbContext.Genres?.Find(newGame.GenreId);
 
-                dbContext.Add(game);
-                dbContext.SaveChanges();
+            dbContext.Add(game);
+            dbContext.SaveChanges();
 
-                return Results.CreatedAtRoute( 
-                    GetGameEndPointName, 
-                    new { id = game.Id}, 
-                    game.ToDto());
+            return Results.CreatedAtRoute( 
+                GetGameEndPointName, 
+                new { id = game.Id }, 
+                game.ToGameDetailsDto());
 
         });
 
@@ -95,7 +95,7 @@ public static class GamesEndpoints {
                 return Results.BadRequest("Price must be between 1 and 100");
             }
 
-            games[index] = new GameDto(
+            games[index] = new GameSummaryDto(
                 id,
                 updatedGame.Name,
                 updatedGame.Genre,
