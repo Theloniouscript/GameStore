@@ -1,6 +1,7 @@
 using GameStore.Api.Data;
 using GameStore.Api.Dtos;
 using GameStore.Api.Entities;
+using GameStore.Api.Mapping;
 
 namespace GameStore.Api.Endpoints;
 
@@ -57,31 +58,16 @@ public static class GamesEndpoints {
                 return Results.BadRequest("Price must be between 1 and 100");
             }
 
-            var genre = dbContext.Genres?.Find(newGame.GenreId);
-            if(genre == null) 
-            {
-                return Results.BadRequest("Genre not found");
-            }
-
-            Game game = new() {
-                Name = newGame.Name,
-                Genre = genre,
-                GenreId = newGame.GenreId,
-                Price = newGame.Price,
-                ReleaseDate = newGame.ReleaseDate
-            };
-
-            GameDto gameDto = new (
-                game.Id,
-                game.Name,
-                genre.Name!,
-                game.Price,
-                game.ReleaseDate);
+            Game game = newGame.ToEntity();
+            game.Genre = dbContext.Genres?.Find(newGame.GenreId);
 
                 dbContext.Add(game);
                 dbContext.SaveChanges();
 
-                return Results.CreatedAtRoute( GetGameEndPointName, new { id = game.Id}, gameDto);
+                return Results.CreatedAtRoute( 
+                    GetGameEndPointName, 
+                    new { id = game.Id}, 
+                    game.ToDto());
 
         });
 
