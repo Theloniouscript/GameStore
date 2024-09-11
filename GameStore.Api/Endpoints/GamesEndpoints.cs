@@ -1,4 +1,6 @@
+using GameStore.Api.Data;
 using GameStore.Api.Dtos;
+using GameStore.Api.Entities;
 
 namespace GameStore.Api.Endpoints;
 
@@ -43,16 +45,11 @@ public static class GamesEndpoints {
 
         // POST /games
 
-        app.MapPost("games", (CreateGameDto newGame) => {
+        app.MapPost("games", (CreateGameDto newGame, GameStoreContext dbContext) => {
 
             if(string.IsNullOrEmpty(newGame.Name) || newGame.Name.Length > 50)
             {
                 return Results.BadRequest("Name is required and should be < or = 50 characters");
-            }
-
-            if(string.IsNullOrEmpty(newGame.Genre) || newGame.Genre.Length > 20)
-            {
-                return Results.BadRequest("Genre is required and should be < or = 20 characters");
             }
 
             if(newGame.Price < 1 || newGame.Price > 100)
@@ -60,16 +57,31 @@ public static class GamesEndpoints {
                 return Results.BadRequest("Price must be between 1 and 100");
             }
 
-            GameDto game = new (
-                games.Count +1,
-                newGame.Name,
-                newGame.Genre,
-                newGame.Price,
-                newGame.ReleaseDate);
+            var genre = dbContext.Genres?.Find(newGame.GenreId);
+            if(genre == null) 
+            {
+                return Results.BadRequest("Genre not found");
+            }
 
-                games.Add(game);
+            Game game = new() {
+                Name = newGame.Name,
+                Genre = genre,
+                GenreId = newGame.GenreId,
+                Price = newGame.Price,
+                ReleaseDate = newGame.ReleaseDate
+            };
 
-                return Results.CreatedAtRoute( GetGameEndPointName, new { id = game.Id}, game);
+            GameDto gameDto = new (
+                game.Id,
+                game.Name,
+                genre.Name!,
+                game.Price,
+                game.ReleaseDate);
+
+                dbContext.Add(game);
+                dbContext.SaveChanges();
+
+                return Results.CreatedAtRoute( GetGameEndPointName, new { id = game.Id}, gameDto);
 
         });
 
