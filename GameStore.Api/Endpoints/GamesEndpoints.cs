@@ -8,31 +8,6 @@ namespace GameStore.Api.Endpoints;
 
 public static class GamesEndpoints {
     const string GetGameEndPointName = "GetGame";
-
-    private static readonly List<GameSummaryDto> games = new List<GameSummaryDto>
-    {
-        new GameSummaryDto (
-            1,
-            "Street Fighter II",
-            "Fighting",
-            19.99M,
-            new DateTime(1992, 7, 15, 0, 0, 0, DateTimeKind.Utc)),
-
-        new GameSummaryDto (
-            2, 
-            "Final Fantasy XIV",
-            "Roleplaying",
-            59.99M,
-            new DateTime(2010, 9, 30, 0, 0, 0, DateTimeKind.Utc)),
-
-        new GameSummaryDto (
-            3,
-            "FIFA 23",
-            "Sports",
-            69.99M,
-            new DateTime(2022, 9, 27, 0, 0, 0, DateTimeKind.Utc))
-    };
-
     public static WebApplication MapGamesEndpoints (this WebApplication app) {
         // GET /games
         app.MapGet("games", (GameStoreContext dbContext) => 
@@ -105,8 +80,17 @@ public static class GamesEndpoints {
 
         // DELETE /games
 
-        app.MapDelete("games/{id}", (int id) => {
-            games.RemoveAll(game => game.Id == id);
+        app.MapDelete("games/{id}", (int id, GameStoreContext dbContext) => {
+
+            var game = dbContext.Games.Find(id);
+
+            if(game is null)
+            {
+                return Results.NotFound();
+            }
+
+            dbContext.Games.Remove(game);
+            dbContext.SaveChanges();                             
 
             return Results.NoContent();
         });
