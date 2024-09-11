@@ -2,6 +2,7 @@ using GameStore.Api.Data;
 using GameStore.Api.Dtos;
 using GameStore.Api.Entities;
 using GameStore.Api.Mapping;
+using Microsoft.EntityFrameworkCore;
 
 namespace GameStore.Api.Endpoints;
 
@@ -34,7 +35,11 @@ public static class GamesEndpoints {
 
     public static WebApplication MapGamesEndpoints (this WebApplication app) {
         // GET /games
-        app.MapGet("games", () => games);
+        app.MapGet("games", (GameStoreContext dbContext) => 
+                dbContext.Games
+                    .Include(game => game.Genre)
+                    .Select(game => game.ToGameSummaryDto())
+                    .AsNoTracking());
 
         // GET /games/1
 
